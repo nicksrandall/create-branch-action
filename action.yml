@@ -21,7 +21,7 @@ inputs:
     required: true
   passowrd:
     required: true
-    
+
 outputs:
   branch_id:
     description: "Newly created branch Id"
@@ -29,6 +29,9 @@ outputs:
   project_id:
     description: "Project Id"
     value: ${{ steps.output-project-id.outputs.project_id }}
+  host:
+    description: "Newly created endpoint host"
+    value: ${{ steps.output-host.outputs.host }}
 
 runs:
   using: "composite"
@@ -41,6 +44,11 @@ runs:
         -H 'Authorization: Bearer ${{ inputs.api_key }}' \
         -H 'Content-Type: application/json' \
         -d '{
+        "endpoints": [
+          {
+            "type": "read_write"
+          }
+        ],
         "branch": {
           "parent_id": "${{inputs.parent_branch_id}}",
           "name": "${{inputs.branch_name}}"
@@ -49,7 +57,7 @@ runs:
         echo $OUTPUT > output.json
     - uses: notiz-dev/github-action-json-property@release
       id: get_branch_id
-      with: 
+      with:
         path: 'output.json'
         prop_path: 'branch.id'
     - run: echo "branch_id=${{steps.get_branch_id.outputs.prop}}" >> $GITHUB_OUTPUT
@@ -57,9 +65,17 @@ runs:
       id: output-branch-id
     - uses: notiz-dev/github-action-json-property@release
       id: get_project_id
-      with: 
+      with:
         path: 'output.json'
         prop_path: 'branch.project_id'
     - run: echo "project_id=${{steps.get_project_id.outputs.prop}}" >> $GITHUB_OUTPUT
       shell: bash
       id: output-project-id
+    - uses: notiz-dev/github-action-json-property@release
+      id: get_host
+      with:
+        path: 'output.json'
+        prop_path: 'endpoints[0].host'
+    - run: echo "host=${{steps.get_host.outputs.prop}}" >> $GITHUB_OUTPUT
+      shell: bash
+      id: output-host
